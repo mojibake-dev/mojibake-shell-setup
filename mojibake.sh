@@ -1,78 +1,46 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# ---- 1) Build & install ncurses from source (Linux only) ----
-install_ncurses() {
-  if [[ "$(uname -s)" == Darwin ]]; then
-    return
-  fi
-  echo "📚 Building ncurses from source…"
-  tmp=$(mktemp -d)
-  pushd "$tmp"
-    curl -fsSL https://ftp.gnu.org/pub/gnu/ncurses/ncurses-6.3.tar.gz \
-      | tar xz
-    cd ncurses-6.3
-    ./configure --prefix=/usr/local \
-                --with-shared=no \
-                --enable-widec \
-                --without-debug \
-                --without-ada
-    make -j"$(nproc)"
-    sudo make install
-  popd
-  rm -rf "$tmp"
+install_zsh_from_release() {
+  REPO="mojibake-dev/mojibake-shell-setup"   # ← your GitHub repo
+  OS=$(uname | tr '[:upper:]' '[:lower:]')
+  case "$OS" in
+    linux)   os_part="linux" ;;
+    darwin)  os_part="macos" ;;
+    *)       echo "Unsupported OS: $OS"; exit 1 ;;
+  esac
+
+  arch=$(uname -m)
+  case "$arch" in
+    x86_64)   arch_part="x86_64" ;;
+    aarch64|arm64) arch_part="arm64" ;;
+    *)        echo "Unsupported ARCH: $arch"; exit 1 ;;
+  esac
+
+  file="zsh-${os_part}-${arch_part}.zip"
+  url="https://github.com/${REPO}/releases/latest/download/${file}"
+  echo "📥 Downloading $file from $url"
+  tmp="/tmp/$file"
+  curl -fsSL "$url" -o "$tmp"
+  echo "📦 Unpacking to /usr/local/bin"
+  unzip -jo "$tmp" "*/bin/zsh" -d /usr/local/bin
+  chmod +x /usr/local/bin/zsh
 }
 
-# ---- 2) Install Zsh (macOS via brew, Linux via static build) ----
-install_zsh() {
-  echo "🔨 Installing Zsh…"
-  os="$(uname -s)"
-  if [[ "$os" == Darwin ]]; then
-    echo "macOS detected: installing zsh via Homebrew…"
-    if ! command -v brew &>/dev/null; then
-      echo "Bootstrapping Homebrew…"
-      /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-      eval "$(/opt/homebrew/bin/brew shellenv)"
-    fi
-    brew install zsh
-    return
-  fi
+# 1) Ensure Zsh
+if ! command -v zsh &>/dev/null; then
+  install_zsh_from_release
+fi
 
-  # Linux → ensure ncurses, then build static Zsh
-  install_ncurses
+# 2) Make default shell
+ZSH_PATH=$(command -v zsh)
+if [ "$SHELL" != "$ZSH_PATH" ]; then
+  echo "🔄 chsh to $ZSH_PATH"
+  chsh -s "$ZSH_PATH"
+fi
 
-  # pick compiler
-  if command -v gcc &>/dev/null; then
-    export CC=gcc
-  elif command -v clang &>/dev/null; then
-    export CC=clang
-  else
-    echo "Error: neither gcc nor clang found." >&2
-    exit 1
-  fi
+# …then the rest of your script: Oh My Zsh/plugins install, oh-my-posh, fonts, symlinks, exec zsh …
 
-  export CFLAGS="-O2 -march=native"
-  # require tools
-  for tool in make tar xz; do
-    command -v "$tool" &>/dev/null || { echo "Error: '$tool' is required." >&2; exit 1; }
-  done
-
-  ZSH_VER="5.9"
-  tmp=$(mktemp -d)
-  pushd "$tmp"
-    curl -fsSL "https://www.zsh.org/pub/zsh-${ZSH_VER}.tar.xz" \
-      | tar -xJ
-    cd "zsh-${ZSH_VER}"
-    ./configure --prefix=/usr/local \
-                --enable-static \
-                --with-term-lib=ncurses \
-                LDFLAGS="-static -s -L/usr/local/lib" \
-                CPPFLAGS="-I/usr/local/include"
-    make -j"$(nproc)"
-    sudo make install
-  popd
-  rm -rf "$tmp"
-}
 
 # ---- locate script dir for symlinks ----
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
