@@ -60,7 +60,9 @@ jobs:
           curl -fsSL https://www.zsh.org/pub/zsh-${ZSH_VER}.tar.xz | tar -xJ
           cd zsh-${ZSH_VER}
           [[ "${{ matrix.os }}" = "macos-latest" ]] && ./Util/preconfig || true
-          ./configure $HOST --prefix="$(pwd)/../$OUTDIR"
+          ./configure $HOST \
+           --without-tcsetpgrp \
+           --prefix="$(pwd)/../$OUTDIR"
           make -j"$(nproc || sysctl -n hw.ncpu)"
           make install
 
