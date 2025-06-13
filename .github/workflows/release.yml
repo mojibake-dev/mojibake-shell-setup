@@ -63,8 +63,12 @@ jobs:
           make install
       - name: Package
         run: |
-          cd out
-          zip -r zsh-${{ matrix.os }}-${{ matrix.arch }}.zip ${{ matrix.os }}-${{ matrix.arch }}/bin/zsh
+            cd out
+            zip -r zsh-${{ matrix.os }}-${{ matrix.arch }}.zip \
+            ../setup-zsh.sh \
+            ../mojibake.omp.json \
+            ${{ matrix.os }}-${{ matrix.arch }}/bin/zsh
+
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v3
