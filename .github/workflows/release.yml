@@ -13,6 +13,8 @@ jobs:
         include:
           - os: ubuntu-latest
             arch: x86_64
+          - os: ubuntu-latest
+            arch: arm64
           - os: macos-latest
             arch: x86_64
           - os: macos-latest
@@ -22,7 +24,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      # Install build tools + ncurses.dev
       - name: Install build tools (Ubuntu)
         if: matrix.os == 'ubuntu-latest'
         run: |
@@ -35,12 +36,20 @@ jobs:
             pkg-config \
             libncurses-dev
 
+          if [ "${{ matrix.arch }}" = "arm64" ]; then
+            sudo dpkg --add-architecture arm64
+            sudo apt-get update
+            sudo apt-get install -y \
+              gcc-aarch64-linux-gnu \
+              libc6-dev:arm64 \
+              libncurses-dev:arm64
+          fi
+
       - name: Install build tools (macOS)
         if: matrix.os == 'macos-latest'
         run: |
           brew install autoconf make pkg-config curl xz
 
-      # Fetch, configure & build Zsh
       - name: Configure & build Zsh
         run: |
           ZSH_VER=5.9
@@ -49,9 +58,13 @@ jobs:
 
           case "${{ matrix.os }}" in
             ubuntu-latest)
+              if [ "${{ matrix.arch }}" = "arm64" ]; then
+                HOST="--host=aarch64-linux-gnu"
+              else
+                HOST=""
+              fi
               export CFLAGS="-O2 -march=native"
               export LDFLAGS=""
-              HOST=""
               ;;
             macos-latest)
               export CFLAGS="-O2 -arch ${{ matrix.arch }}"
@@ -59,7 +72,7 @@ jobs:
               HOST=""
               ;;
             *)
-              echo "Unsupported OS: ${{ matrix.os }}" && exit 1
+              echo "Unsupported OS/matrix: ${{ matrix.os }}/${{ matrix.arch }}" && exit 1
               ;;
           esac
 
@@ -77,14 +90,12 @@ jobs:
           make install
           cd ..
 
-      # Bundle every repo file + the new zsh binary
-      - name: Package (all tracked files + zsh)
+      - name: Package all tracked files + zsh
         run: |
           git ls-files > filelist.txt
           echo "out/${{ matrix.os }}-${{ matrix.arch }}/bin/zsh" >> filelist.txt
           zip -r zsh-${{ matrix.os }}-${{ matrix.arch }}.zip -@ < filelist.txt
 
-      # Upload
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
@@ -107,4 +118,4 @@ jobs:
         uses: ncipollo/release-action@v1
         with:
           tag: main-build-${{ github.run_number }}
-          artifacts: artifacts/*.zip
+          artifacts: artifacts/**/*.zip
