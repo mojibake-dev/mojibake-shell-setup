@@ -37,7 +37,6 @@ jobs:
           OUTDIR=out/${{ matrix.os }}-${{ matrix.arch }}
           mkdir -p "$OUTDIR"
 
-          # pick flags per OS
           case "${{ matrix.os }}" in
             macos-latest)
               export CFLAGS="-O2 -arch ${{ matrix.arch }}"
@@ -54,8 +53,7 @@ jobs:
               export LDFLAGS="-static"
               ;;
             *)
-              echo "Unsupported OS: ${{ matrix.os }}"
-              exit 1
+              echo "Unsupported OS: ${{ matrix.os }}" && exit 1
               ;;
           esac
 
@@ -73,7 +71,7 @@ jobs:
           zip -r zsh-${{ matrix.os }}-${{ matrix.arch }}.zip -@ < filelist.txt
 
       - name: Upload build artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: zsh-${{ matrix.os }}-${{ matrix.arch }}
           path: zsh-${{ matrix.os }}-${{ matrix.arch }}.zip
@@ -86,7 +84,7 @@ jobs:
 
     steps:
       - name: Download build artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           path: artifacts
 
