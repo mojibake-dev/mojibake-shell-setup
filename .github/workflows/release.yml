@@ -2,8 +2,8 @@ name: Build & Release Zsh
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches:
+      - main
 
 jobs:
   build:
@@ -12,13 +12,12 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest]
         arch: [x86_64, arm64]
-    outputs:
-      artifact-name: ${{ matrix.os }}-${{ matrix.arch }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Install build tools
+      - name: Install build tools (Linux)
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
@@ -26,6 +25,7 @@ jobs:
           if [ "${{ matrix.arch }}" = "arm64" ]; then
             sudo apt-get install -y gcc-aarch64-linux-gnu
           fi
+
       - name: Install build tools (macOS)
         if: matrix.os == 'macos-latest'
         run: |
@@ -34,61 +34,26 @@ jobs:
       - name: Configure & build Zsh
         run: |
           ZSH_VER=5.9
-          mkdir -p out/$OS-$ARCH
+          OUTDIR=out/${{ matrix.os }}-${{ matrix.arch }}
+          mkdir -p "$OUTDIR"
+          
           if [ "${{ matrix.os }}" = "macos-latest" ]; then
-            # macOS: cross-arch via -arch flags
             export CFLAGS="-O2 -arch ${{ matrix.arch }}"
             export LDFLAGS="-arch ${{ matrix.arch }}"
             curl -fsSL https://www.zsh.org/pub/zsh-${ZSH_VER}.tar.xz | tar -xJ
             cd zsh-${ZSH_VER}
             ./Util/preconfig || true
-            ./configure --prefix="$(pwd)/../out/${{ matrix.os }}-${{ matrix.arch }}"
+            ./configure --prefix="$(pwd)/../$OUTDIR"
           else
-            # Linux: static build, cross-compile for arm64 if needed
+            # Linux static or cross-compile
             if [ "${{ matrix.arch }}" = "arm64" ]; then
               export CC=aarch64-linux-gnu-gcc
-              export CFLAGS="-static -O2 -march=native"
-              export LDFLAGS="-static"
-              HOST=--host=aarch64-linux-gnu
+              HOST="--host=aarch64-linux-gnu"
             else
-              export CFLAGS="-static -O2 -march=native"
-              export LDFLAGS="-static"
-              HOST=
+              HOST=""
             fi
+            export CFLAGS="-static -O2 -march=native"
+            export LDFLAGS="-static"
             curl -fsSL https://www.zsh.org/pub/zsh-${ZSH_VER}.tar.xz | tar -xJ
             cd zsh-${ZSH_VER}
-            ./configure $HOST --prefix="$(pwd)/../out/${{ matrix.os }}-${{ matrix.arch }}"
-          fi
-          make -j"$(nproc || sysctl -n hw.ncpu)"
-          make install
-      - name: Package
-        run: |
-            cd out
-            zip -r zsh-${{ matrix.os }}-${{ matrix.arch }}.zip \
-            ../setup-zsh.sh \
-            ../mojibake.omp.json \
-            ${{ matrix.os }}-${{ matrix.arch }}/bin/zsh
-
-
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: zsh-${{ matrix.os }}-${{ matrix.arch }}
-          path: out/zsh-${{ matrix.os }}-${{ matrix.arch }}.zip
-
-  release:
-    needs: build
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - name: Download all build artifacts
-        uses: actions/download-artifact@v3
-        with:
-          path: artifacts
-
-      - name: Create GitHub Release & upload zsh binaries
-        uses: ncipollo/release-action@v1
-        with:
-          tag: ${{ github.ref_name }}
-          artifacts: artifacts/*.zip
+            ./configu
