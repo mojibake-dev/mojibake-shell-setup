@@ -21,7 +21,7 @@ jobs:
         if: ${{ matrix.os == 'ubuntu-latest' }}
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential curl tar xz pkg-config
+          sudo apt-get install -y build-essential curl tar xz-utils pkg-config
           if [ "${{ matrix.arch }}" = "arm64" ]; then
             sudo apt-get install -y gcc-aarch64-linux-gnu
           fi
