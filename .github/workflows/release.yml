@@ -21,9 +21,11 @@ jobs:
         if: ${{ matrix.os == 'ubuntu-latest' }}
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential curl tar xz-utils pkg-config
+          sudo apt-get install -y build-essential curl tar xz-utils pkg-config libncurses-dev
           if [ "${{ matrix.arch }}" = "arm64" ]; then
-            sudo apt-get install -y gcc-aarch64-linux-gnu
+            sudo dpkg --add-architecture arm64
+            sudo apt-get update
+            sudo apt-get install -y gcc-aarch64-linux-gnu libc6-dev:arm64 libncurses-dev:arm64
           fi
 
       - name: Install build tools (macOS)
@@ -41,10 +43,10 @@ jobs:
             macos-latest)
               export CFLAGS="-O2 -arch ${{ matrix.arch }}"
               export LDFLAGS="-arch ${{ matrix.arch }}"
+              HOST=""
               ;;
             ubuntu-latest)
               if [ "${{ matrix.arch }}" = "arm64" ]; then
-                export CC=aarch64-linux-gnu-gcc
                 HOST="--host=aarch64-linux-gnu"
               else
                 HOST=""
@@ -61,8 +63,8 @@ jobs:
           cd zsh-${ZSH_VER}
           [[ "${{ matrix.os }}" = "macos-latest" ]] && ./Util/preconfig || true
           ./configure $HOST \
-           --without-tcsetpgrp \
-           --prefix="$(pwd)/../$OUTDIR"
+            --without-tcsetpgrp \
+            --prefix="$(pwd)/../$OUTDIR"
           make -j"$(nproc || sysctl -n hw.ncpu)"
           make install
 
