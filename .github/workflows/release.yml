@@ -112,19 +112,16 @@ jobs:
           mkdir -p pkg
           # copy README, installer script, and theme
           cp README.md mojibake.sh mojibake.omp.json pkg/
-          # enable globbing for deep search
-          shopt -s globstar nullglob
-          # find and copy zsh binaries
-          for f in artifacts/*-zsh/out/*/bin/zsh; do
-            # artifact dir name e.g. linux-x86_64-zsh
-            artifactName=$(basename "$(dirname "$(dirname "$(dirname "$f")") )")
-            osArch=${artifactName%-zsh}
+          # find all zsh binaries under artifacts
+          while IFS= read -r f; do
+            artifactDir=$(echo "$f" | cut -d/ -f2)
+            osArch=${artifactDir%-zsh}
             os=${osArch%%-*}
             cpu=${osArch#*-}
             prefix=$([[ "$os" == "macos" ]] && echo "osx" || echo "linux")
             arch2=$([[ "$cpu" == "x86_64" ]] && echo "amd64" || echo "arm64")
             cp "$f" "pkg/zsh.${prefix}.${arch2}"
-          done
+          done < <(find artifacts -type f -path "*/bin/zsh")
           cd pkg
           zip -r ../mojibake-zsh-bundle.zip README.md mojibake.sh mojibake.omp.json zsh.*
 
@@ -136,3 +133,4 @@ jobs:
           allowUpdates: true
           removeArtifacts: true
           artifacts: mojibake-zsh-bundle.zip
+          
