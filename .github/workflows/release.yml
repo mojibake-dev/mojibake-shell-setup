@@ -113,11 +113,11 @@ jobs:
           # copy README, installer script, and theme
           cp README.md mojibake.sh mojibake.omp.json pkg/
           # enable globbing for deep search
-          shopt -s globstar
+          shopt -s globstar nullglob
           # find and copy zsh binaries
-          for f in artifacts/*-zsh/**/bin/zsh; do
+          for f in artifacts/*-zsh/out/*/bin/zsh; do
             # artifact dir name e.g. linux-x86_64-zsh
-            artifactName=$(basename "$(dirname "$(dirname "$(dirname "$f")")")")
+            artifactName=$(basename "$(dirname "$(dirname "$(dirname "$f")") )")
             osArch=${artifactName%-zsh}
             os=${osArch%%-*}
             cpu=${osArch#*-}
