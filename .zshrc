@@ -1,6 +1,19 @@
-# If you come from bash you might have to change your $PATH.
+# HOST ENUMERATION
+tmp_os=$(uname | tr '[:upper:]' '[:lower:]')
+case "$tmp_os" in
+  linux) OS=linux ;;  
+  darwin) OS=osx ;;
+  *) echo "Unsupported OS: $tmp_os" >&2; exit 1 ;;
+esac
+
+# Path handling for oh-my-posh
+if [ "$OS" = "osx" ]; then
+    export PATH="$PATH:/Users/$USER/.local/bin"
+else
+    export PATH="$PATH:/home/$USER/.local/bin"
+fi
+
 export PATH=$HOME/bin:$HOME/.local/bin:/usr/local/bin:$PATH
-export PATH="$PATH:/Users/eli/.local/bin"
 export PATH="/opt/homebrew/opt/openjdk/bin:$PATH"
 
 # Path to your Oh My Zsh installation.

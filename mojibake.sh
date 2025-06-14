@@ -95,6 +95,13 @@ else
   (curl -s https://ohmyposh.dev/install.sh | bash -s)
 fi
 
+
+if [ "$OS" = "osx" ]; then
+    export PATH="$PATH:/Users/$USER/.local/bin"
+else
+    export PATH="$PATH:/home/$USER/.local/bin"
+fi
+
 # 6) Verify oh-my-posh
 if ! command -v oh-my-posh &>/dev/null; then
   echo "oh-my-posh command not found in PATH." >&2
@@ -114,3 +121,5 @@ ln -sf "$SCRIPT_DIR/mojibake.omp.json" "$HOME/.oh-my-posh/themes/mojibake.omp.js
 
 # 9) Start zsh
 exec zsh -l
+
+
