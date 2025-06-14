@@ -23,7 +23,7 @@ else
 fi
 
 # 1) Install zsh via package manager
-echo "🔍 Installing zsh using $PKG_MANAGER"
+echo "Installing zsh using $PKG_MANAGER"
 case "$PKG_MANAGER" in
   brew)
     brew install zsh
@@ -39,20 +39,20 @@ esac
 
 # Verify installation
 if ! command -v zsh &> /dev/null; then
-  echo "❌ zsh installation failed." >&2
+  echo "zsh installation failed." >&2
   exit 1
 fi
 
 # 2) Set as default shell if not already
 ZSH_PATH=$(command -v zsh)
 if [ "$SHELL" != "$ZSH_PATH" ]; then
-  echo "🔄 Setting zsh as default shell: $ZSH_PATH"
+  echo "Setting zsh as default shell: $ZSH_PATH"
   chsh -s "$ZSH_PATH"
 fi
 
 # 3) Install Oh My Zsh (no .zshrc overwrite)
 if [ ! -d "$HOME/.oh-my-zsh" ]; then
-  echo "📥 Installing Oh My Zsh"
+  echo "Installing Oh My Zsh"
   mkdir -p "$HOME/.oh-my-zsh"
   curl -fsSL https://codeload.github.com/ohmyzsh/ohmyzsh/tar.gz/master \
     | tar -xz --strip-components=1 -C "$HOME/.oh-my-zsh"
@@ -72,7 +72,7 @@ declare -A PLUGINS=(
 for name in "${!PLUGINS[@]}"; do
   dest="$ZSH_CUSTOM/plugins/$name"
   if [ ! -d "$dest" ]; then
-    echo "🔌 Installing plugin $name"
+    echo "Installing plugin $name"
     mkdir -p "$dest"
     if [ -z "${PLUGINS[$name]}" ]; then
       # core plugin, skip git
@@ -84,7 +84,7 @@ for name in "${!PLUGINS[@]}"; do
 done
 
 # 5) Install Oh My Posh
-echo "🖌️ Installing Oh My Posh"
+echo "Installing Oh My Posh"
 if [ "$OS" = "osx" ]; then
   if ! command -v brew &> /dev/null; then
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
@@ -105,20 +105,11 @@ else
 fi
 
 # 6) Install Hermit Nerd Font
-echo "🔤 Installing Hermit Nerd Font"
-if [ "$OS" = "osx" ]; then
-  FONT_DIR="$HOME/Library/Fonts"
-else
-  FONT_DIR="$HOME/.local/share/fonts"
-fi
-mkdir -p "$FONT_DIR"
-curl -fsSL \
-  "https://github.com/ryanoasis/nerd-fonts/raw/master/patched-fonts/Hermit/Regular/complete/Hermit%20Nerd%20Font%20Complete.ttf" \
-  -o "$FONT_DIR/Hermit Nerd Font Complete.ttf"
-[[ "$OS" != "osx" ]] && fc-cache -f
+echo "Installing Hermit Nerd Font"
+oh-my-posh font install meslo
 
 # 7) Symlinks
-echo "🔗 Linking dotfiles"
+echo "Linking dotfiles"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ln -sf "$SCRIPT_DIR/.zshrc" "$HOME/.zshrc"
 mkdir -p "$HOME/.oh-my-posh/themes"
