@@ -11,11 +11,11 @@ esac
 
 # Determine package manager
 PKG_MANAGER=""
-if command -v brew &> /dev/null; then
+if command -v brew &>/dev/null; then
   PKG_MANAGER="brew"
-elif command -v apt-get &> /dev/null; then
+elif command -v apt-get &>/dev/null; then
   PKG_MANAGER="apt-get"
-elif command -v pacman &> /dev/null; then
+elif command -v pacman &>/dev/null; then
   PKG_MANAGER="pacman"
 else
   echo "No supported package manager found (brew, apt-get, pacman). Please install zsh manually." >&2
@@ -38,7 +38,7 @@ case "$PKG_MANAGER" in
 esac
 
 # Verify installation
-if ! command -v zsh &> /dev/null; then
+if ! command -v zsh &>/dev/null; then
   echo "zsh installation failed." >&2
   exit 1
 fi
@@ -74,24 +74,30 @@ for name in "${!PLUGINS[@]}"; do
   if [ ! -d "$dest" ]; then
     echo "Installing plugin $name"
     mkdir -p "$dest"
-    if [ -z "${PLUGINS[$name]}" ]; then
-      # core plugin, skip git
-      continue
+    if [ -n "${PLUGINS[$name]}" ]; then
+      curl -fsSL "https://codeload.github.com/${PLUGINS[$name]}/tar.gz/master" \
+        | tar -xz --strip-components=1 -C "$dest"
     fi
-    curl -fsSL "https://codeload.github.com/${PLUGINS[$name]}/tar.gz/master" \
-      | tar -xz --strip-components=1 -C "$dest"
   fi
 done
 
 # 5) Install Oh My Posh
 echo "Installing Oh My Posh"
 if [ "$OS" = "osx" ]; then
-  if ! command -v brew &> /dev/null; then
+  if ! command -v brew &>/dev/null; then
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
     eval "$(brew shellenv)"
   fi
   brew install janisdd/oh-my-posh/oh-my-posh
-else
+elif [ "$PKG_MANAGER" = "apt-get" ]; then
+  sudo apt-get update
+  sudo apt-get install -y oh-my-posh
+elif [ "$PKG_MANAGER" = "pacman" ]; then
+  sudo pacman -Sy --noconfirm oh-my-posh
+fi
+
+# Fallback to binary if command not found
+if ! command -v oh-my-posh &>/dev/null; then
   BIN="$HOME/.local/bin/oh-my-posh"
   mkdir -p "$(dirname "$BIN")"
   ARCH=$(uname -m)
@@ -102,13 +108,30 @@ else
   esac
   curl -fsSL "https://github.com/JanDeDobbeleer/oh-my-posh/releases/latest/download/$FILE" \
     -o "$BIN" && chmod +x "$BIN"
+  export PATH="$HOME/.local/bin:$PATH"
+fi
+
+# Verify oh-my-posh
+if ! command -v oh-my-posh &>/dev/null; then
+  echo "oh-my-posh command not found in PATH." >&2
+  exit 1
 fi
 
 # 6) Install Hermit Nerd Font
 echo "Installing Hermit Nerd Font"
-oh-my-posh font install meslo
+if [ "$OS" = "osx" ]; then
+  FONT_DIR="$HOME/Library/Fonts"
+else
+  FONT_DIR="$HOME/.local/share/fonts"
+fi
+mkdir -p "$FONT_DIR"
+# download directly
+curl -fsSL \
+  "https://github.com/ryanoasis/nerd-fonts/raw/master/patched-fonts/Hermit/Regular/complete/Hermit%20Nerd%20Font%20Complete.ttf" \
+  -o "$FONT_DIR/Hermit Nerd Font Complete.ttf"
+[[ "$OS" != "osx" ]] && fc-cache -f
 
-# 7) Symlinks
+# 7) Symlinks for config
 echo "Linking dotfiles"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ln -sf "$SCRIPT_DIR/.zshrc" "$HOME/.zshrc"
