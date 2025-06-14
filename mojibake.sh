@@ -84,31 +84,21 @@ done
 # 5) Install Oh My Posh
 echo "Installing Oh My Posh"
 if [ "$OS" = "osx" ]; then
+  # macOS via Homebrew
   if ! command -v brew &>/dev/null; then
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
     eval "$(brew shellenv)"
   fi
   brew install janisdd/oh-my-posh/oh-my-posh
-elif [ "$PKG_MANAGER" = "apt-get" ]; then
-  sudo apt-get update
-  sudo apt-get install -y oh-my-posh
-elif [ "$PKG_MANAGER" = "pacman" ]; then
-  sudo pacman -Sy --noconfirm oh-my-posh
+else
+  # Linux via official install script
+  curl -s https://ohmyposh.dev/install.sh | bash -s -- --yes
 fi
 
-# Fallback to binary if command not found
+# 6) Verify oh-my-posh
 if ! command -v oh-my-posh &>/dev/null; then
-  BIN="$HOME/.local/bin/oh-my-posh"
-  mkdir -p "$(dirname "$BIN")"
-  ARCH=$(uname -m)
-  case "$ARCH" in
-    x86_64) FILE=posh-linux-amd64 ;;
-    aarch64|arm64) FILE=posh-linux-arm64 ;;
-    *) echo "Unsupported arch for oh-my-posh: $ARCH" >&2; exit 1 ;;
-  esac
-  curl -fsSL "https://github.com/JanDeDobbeleer/oh-my-posh/releases/latest/download/$FILE" \
-    -o "$BIN" && chmod +x "$BIN"
-  export PATH="$HOME/.local/bin:$PATH"
+  echo "oh-my-posh command not found in PATH." >&2
+  exit 1
 fi
 
 # Verify oh-my-posh
@@ -117,15 +107,16 @@ if ! command -v oh-my-posh &>/dev/null; then
   exit 1
 fi
 
-# 6) Install Hermit Nerd Font
+# 7) Install Hermit Nerd Font via Oh My Posh
+echo "Installing Hermit Nerd Font via oh-my-posh"
 oh-my-posh font install hermit
 
-# 7) Symlinks for config
+# 8) Symlinks for config
 echo "Linking dotfiles"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ln -sf "$SCRIPT_DIR/.zshrc" "$HOME/.zshrc"
 mkdir -p "$HOME/.oh-my-posh/themes"
 ln -sf "$SCRIPT_DIR/mojibake.omp.json" "$HOME/.oh-my-posh/themes/mojibake.omp.json"
 
-# 8) Start zsh
+# 9) Start zsh
 exec zsh -l
