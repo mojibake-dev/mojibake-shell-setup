@@ -92,7 +92,7 @@ if [ "$OS" = "osx" ]; then
   brew install janisdd/oh-my-posh/oh-my-posh
 else
   # Linux via official install script
-  curl -s https://ohmyposh.dev/install.sh | bash -s -- --yes
+  curl -s https://ohmyposh.dev/install.sh | bash -s
 fi
 
 # 6) Verify oh-my-posh
