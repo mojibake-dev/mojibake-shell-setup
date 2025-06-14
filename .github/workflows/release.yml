@@ -11,7 +11,6 @@ jobs:
     strategy:
       matrix:
         arch: [x86_64, arm64]
-
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -60,7 +59,6 @@ jobs:
     strategy:
       matrix:
         arch: [x86_64, arm64]
-
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -101,8 +99,10 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
@@ -115,7 +115,6 @@ jobs:
           cp README.md setup-zsh.sh mojibake.omp.json pkg/
           # gather binaries and rename
           for f in artifacts/*-zsh/out/*/bin/zsh; do
-            # e.g. artifacts/linux-x86_64-zsh/out/linux-x86_64/bin/zsh
             base=$(echo "$f" | awk -F'/' '{print $1}')
             case "$base" in
               linux-x86_64-zsh) cp "$f" pkg/zsh.linux.amd64 ;;
