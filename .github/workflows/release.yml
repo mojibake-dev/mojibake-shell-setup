@@ -112,8 +112,6 @@ jobs:
           mkdir -p pkg
           # copy README, installer script, and theme
           cp README.md mojibake.sh mojibake.omp.json pkg/
-          # copy and rename installer script
-          cp setup-zsh.sh pkg/mojibake.sh
           # enable globbing for deep search
           shopt -s globstar
           # find and copy zsh binaries
