@@ -1,4 +1,4 @@
-name: Build & Release Zsh
+name: build config deployment zip
 
 on:
   push:
@@ -33,11 +33,10 @@ jobs:
             pkg-config \
             libncurses-dev
 
-      - name: Build Zsh on x86_64
-        if: ${{ matrix.arch == 'x86_64' }}
+      - name: Build Zsh on linux-${{ matrix.arch }}
         run: |
           ZSH_VER=5.9
-          OUTDIR=out/linux-x86_64
+          OUTDIR=out/linux-${{ matrix.arch }}
           mkdir -p "$OUTDIR"
           curl -fsSL "https://www.zsh.org/pub/zsh-${ZSH_VER}.tar.xz" \
             | tar -xJ
@@ -50,47 +49,11 @@ jobs:
           make install
           cd ..
 
-      - name: Build Zsh on ARM64
-        if: ${{ matrix.arch == 'arm64' }}
-        uses: addnab/docker-run-action@v3
-        with:
-          image: ubuntu:22.04
-          options: |
-            --platform linux/arm64
-            --volume ${{ github.workspace }}:/src
-            --volume ${{ github.workspace }}/out/linux-arm64:/out
-          run: |
-            apt-get update
-            apt-get install -y \
-              build-essential \
-              libncurses-dev \
-              curl \
-              tar \
-              xz-utils \
-              pkg-config
-            cd /src
-            ZSH_VER=5.9
-            curl -fsSL "https://www.zsh.org/pub/zsh-${ZSH_VER}.tar.xz" \
-              | tar -xJ
-            cd "zsh-${ZSH_VER}"
-            ./configure \
-              --without-tcsetpgrp \
-              --with-term-lib=ncurses \
-              --prefix=/out
-            make -j"$(nproc)"
-            make install
-
-      - name: Package Linux build
-        run: |
-          git ls-files > filelist.txt
-          echo "out/linux-${{ matrix.arch }}/bin/zsh" >> filelist.txt
-          zip -r zsh-linux-${{ matrix.arch }}.zip -@ < filelist.txt
-
-      - name: Upload Linux artifact
+      - name: Upload Linux Zsh binary
         uses: actions/upload-artifact@v4
         with:
-          name: zsh-linux-${{ matrix.arch }}
-          path: zsh-linux-${{ matrix.arch }}.zip
+          name: linux-${{ matrix.arch }}-zsh
+          path: out/linux-${{ matrix.arch }}/bin/zsh
 
   build-macos:
     runs-on: macos-latest
@@ -106,7 +69,7 @@ jobs:
         run: |
           brew install autoconf make pkg-config curl xz ncurses
 
-      - name: Build Zsh on macOS ${{ matrix.arch }}
+      - name: Build Zsh on macos-${{ matrix.arch }}
         run: |
           ZSH_VER=5.9
           OUTDIR=out/macos-${{ matrix.arch }}
@@ -125,17 +88,11 @@ jobs:
           make install
           cd ..
 
-      - name: Package macOS build
-        run: |
-          git ls-files > filelist.txt
-          echo "out/macos-${{ matrix.arch }}/bin/zsh" >> filelist.txt
-          zip -r zsh-macos-${{ matrix.arch }}.zip -@ < filelist.txt
-
-      - name: Upload macOS artifact
+      - name: Upload macOS Zsh binary
         uses: actions/upload-artifact@v4
         with:
-          name: zsh-macos-${{ matrix.arch }}
-          path: zsh-macos-${{ matrix.arch }}.zip
+          name: macos-${{ matrix.arch }}-zsh
+          path: out/macos-${{ matrix.arch }}/bin/zsh
 
   release:
     needs:
@@ -151,8 +108,11 @@ jobs:
         with:
           path: artifacts
 
-      - name: Create GitHub Release & upload bundles
+      - name: Create or update GitHub Release
         uses: ncipollo/release-action@v1
         with:
-          tag: main-build-${{ github.run_number }}
-          artifacts: artifacts/**/*.zip
+          tag: latest
+          commit: main
+          allowUpdates: true
+          removeArtifacts: true
+          artifacts: mojibake-zsh-bundle.zip
