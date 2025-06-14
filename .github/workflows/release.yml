@@ -107,21 +107,25 @@ jobs:
           path: artifacts
 
       - name: Create deployment bundle
+        shell: bash
         run: |
           mkdir -p pkg
-          # copy README, installer and theme
-          cp README.md mojibake.sh mojibake.omp.json pkg/
-          # copy and rename binaries
-          artifacts=(linux-x86_64-zsh linux-arm64-zsh macos-x86_64-zsh macos-arm64-zsh)
-          for a in "${artifacts[@]}"; do
-            os_cpu="${a%-zsh}"        # e.g. linux-x86_64
-            os="${os_cpu%%-*}"        # linux or macos
-            cpu="${os_cpu#*-}"        # x86_64 or arm64
-            prefix="${os}"; [[ "$os" == "macos" ]] && prefix="osx"
-            arch2="${cpu}"; [[ "$cpu" == "x86_64" ]] && arch2="amd64" || arch2="arm64"
-            src="artifacts/${a}/out/${os}-${cpu}/bin/zsh"
-            dst="pkg/zsh.${prefix}.${arch2}"
-            cp "$src" "$dst"
+          # copy README and theme
+          cp README.md mojibake.omp.json pkg/
+          # copy and rename installer script
+          cp setup-zsh.sh pkg/mojibake.sh
+          # enable globbing for deep search
+          shopt -s globstar
+          # find and copy zsh binaries
+          for f in artifacts/*-zsh/**/bin/zsh; do
+            # artifact dir name e.g. linux-x86_64-zsh
+            artifactName=$(basename "$(dirname "$(dirname "$(dirname "$f")")")")
+            osArch=${artifactName%-zsh}
+            os=${osArch%%-*}
+            cpu=${osArch#*-}
+            prefix=$([[ "$os" == "macos" ]] && echo "osx" || echo "linux")
+            arch2=$([[ "$cpu" == "x86_64" ]] && echo "amd64" || echo "arm64")
+            cp "$f" "pkg/zsh.${prefix}.${arch2}"
           done
           cd pkg
           zip -r ../mojibake-zsh-bundle.zip README.md mojibake.sh mojibake.omp.json zsh.*
