@@ -37,8 +37,7 @@ jobs:
           ZSH_VER=5.9
           OUTDIR=out/linux-${{ matrix.arch }}
           mkdir -p "$OUTDIR"
-          curl -fsSL "https://www.zsh.org/pub/zsh-${ZSH_VER}.tar.xz" \
-            | tar -xJ
+          curl -fsSL "https://www.zsh.org/pub/zsh-${ZSH_VER}.tar.xz" | tar -xJ
           cd "zsh-${ZSH_VER}"
           ./configure \
             --without-tcsetpgrp \
@@ -72,8 +71,7 @@ jobs:
           ZSH_VER=5.9
           OUTDIR=out/macos-${{ matrix.arch }}
           mkdir -p "$OUTDIR"
-          curl -fsSL "https://www.zsh.org/pub/zsh-${ZSH_VER}.tar.xz" \
-            | tar -xJ
+          curl -fsSL "https://www.zsh.org/pub/zsh-${ZSH_VER}.tar.xz" | tar -xJ
           cd "zsh-${ZSH_VER}"
           ./Util/preconfig || true
           CFLAGS="-O2 -arch ${{ matrix.arch }}" \
@@ -111,23 +109,22 @@ jobs:
       - name: Create deployment bundle
         run: |
           mkdir -p pkg
-          # include README, installer script, theme
-          mapfile -t files < <(git ls-files "*.sh" "*.md" "*.json")
-          cp "${files[@]}" pkg/
-          # gather binaries and rename
-          for f in artifacts/*-zsh/out/*/bin/zsh; do
-            artifactDir=$(basename "$(dirname "$(dirname "$(dirname "$f")")")")
-            artifact="${artifactDir%-zsh}"
-            case "$artifact" in
-              linux-x86_64) cp "$f" pkg/zsh.linux.amd64 ;;
-              linux-arm64)   cp "$f" pkg/zsh.linux.arm64 ;;
-              macos-x86_64)  cp "$f" pkg/zsh.osx.amd64 ;;
-              macos-arm64)   cp "$f" pkg/zsh.osx.arm64 ;;
-              *) echo "Skipping unknown artifact $artifactDir" ;;
-            esac
+          # copy README, installer and theme
+          cp README.md mojibake.sh mojibake.omp.json pkg/
+          # copy and rename binaries
+          artifacts=(linux-x86_64-zsh linux-arm64-zsh macos-x86_64-zsh macos-arm64-zsh)
+          for a in "${artifacts[@]}"; do
+            os_cpu="${a%-zsh}"        # e.g. linux-x86_64
+            os="${os_cpu%%-*}"        # linux or macos
+            cpu="${os_cpu#*-}"        # x86_64 or arm64
+            prefix="${os}"; [[ "$os" == "macos" ]] && prefix="osx"
+            arch2="${cpu}"; [[ "$cpu" == "x86_64" ]] && arch2="amd64" || arch2="arm64"
+            src="artifacts/${a}/out/${os}-${cpu}/bin/zsh"
+            dst="pkg/zsh.${prefix}.${arch2}"
+            cp "$src" "$dst"
           done
           cd pkg
-          zip -r ../mojibake-zsh-bundle.zip .
+          zip -r ../mojibake-zsh-bundle.zip README.md mojibake.sh mojibake.omp.json zsh.*
 
       - name: Create or update GitHub Release
         uses: ncipollo/release-action@v1
