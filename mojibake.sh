@@ -58,6 +58,14 @@ if [ ! -d "$HOME/.oh-my-zsh" ]; then
     | tar -xz --strip-components=1 -C "$HOME/.oh-my-zsh"
 fi
 
+# if git isn't installed set disable update to true
+if ! command -v git &>/dev/null; then
+  echo "Git not found, disabling Oh My Zsh auto-update"
+  echo "DISABLE_UPDATE=true" >> "$HOME/.oh-my-zsh/custom/disable-update.zsh"
+else
+  echo "Git found, Oh My Zsh will auto-update"
+fi
+
 # 4) Install plugins
 ZSH_CUSTOM="$HOME/.oh-my-zsh/custom"
 declare -A PLUGINS=(
