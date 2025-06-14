@@ -112,11 +112,13 @@ jobs:
         run: |
           mkdir -p pkg
           # include README, installer script, theme
-          cp README.md setup-zsh.sh mojibake.omp.json pkg/
+          mapfile -t files < <(git ls-files "*.sh" "*.md" "*.json")
+          cp "${files[@]}" pkg/
           # gather binaries and rename
           for f in artifacts/*-zsh/out/*/bin/zsh; do
-            base=$(echo "$f" | awk -F'/' '{print $1}')
-            case "$base" in
+            dir=$(dirname "$f")
+            artifact=$(basename $(dirname $(dirname "$f")))
+            case "$artifact" in
               linux-x86_64-zsh) cp "$f" pkg/zsh.linux.amd64 ;;
               linux-arm64-zsh) cp "$f" pkg/zsh.linux.arm64 ;;
               macos-x86_64-zsh) cp "$f" pkg/zsh.osx.amd64 ;;
