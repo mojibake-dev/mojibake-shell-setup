@@ -118,18 +118,7 @@ if ! command -v oh-my-posh &>/dev/null; then
 fi
 
 # 6) Install Hermit Nerd Font
-echo "Installing Hermit Nerd Font"
-if [ "$OS" = "osx" ]; then
-  FONT_DIR="$HOME/Library/Fonts"
-else
-  FONT_DIR="$HOME/.local/share/fonts"
-fi
-mkdir -p "$FONT_DIR"
-# download directly
-curl -fsSL \
-  "https://github.com/ryanoasis/nerd-fonts/raw/master/patched-fonts/Hermit/Regular/complete/Hermit%20Nerd%20Font%20Complete.ttf" \
-  -o "$FONT_DIR/Hermit Nerd Font Complete.ttf"
-[[ "$OS" != "osx" ]] && fc-cache -f
+oh-my-posh font install hermit
 
 # 7) Symlinks for config
 echo "Linking dotfiles"
