@@ -116,13 +116,14 @@ jobs:
           cp "${files[@]}" pkg/
           # gather binaries and rename
           for f in artifacts/*-zsh/out/*/bin/zsh; do
-            dir=$(dirname "$f")
-            artifact=$(basename $(dirname $(dirname "$f")))
+            artifactDir=$(basename "$(dirname "$(dirname "$(dirname "$f")")")")
+            artifact="${artifactDir%-zsh}"
             case "$artifact" in
-              linux-x86_64-zsh) cp "$f" pkg/zsh.linux.amd64 ;;
-              linux-arm64-zsh) cp "$f" pkg/zsh.linux.arm64 ;;
-              macos-x86_64-zsh) cp "$f" pkg/zsh.osx.amd64 ;;
-              macos-arm64-zsh) cp "$f" pkg/zsh.osx.arm64 ;;
+              linux-x86_64) cp "$f" pkg/zsh.linux.amd64 ;;
+              linux-arm64)   cp "$f" pkg/zsh.linux.arm64 ;;
+              macos-x86_64)  cp "$f" pkg/zsh.osx.amd64 ;;
+              macos-arm64)   cp "$f" pkg/zsh.osx.arm64 ;;
+              *) echo "Skipping unknown artifact $artifactDir" ;;
             esac
           done
           cd pkg
