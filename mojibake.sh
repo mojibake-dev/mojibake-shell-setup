@@ -91,17 +91,11 @@ if [ "$OS" = "osx" ]; then
   fi
   brew install janisdd/oh-my-posh/oh-my-posh
 else
-  # Linux via official install script
-  curl -s https://ohmyposh.dev/install.sh | bash -s
+  # Linux via official install script in subshell to avoid exec killing parent
+  (curl -s https://ohmyposh.dev/install.sh | bash -s -- --yes)
 fi
 
 # 6) Verify oh-my-posh
-if ! command -v oh-my-posh &>/dev/null; then
-  echo "oh-my-posh command not found in PATH." >&2
-  exit 1
-fi
-
-# Verify oh-my-posh
 if ! command -v oh-my-posh &>/dev/null; then
   echo "oh-my-posh command not found in PATH." >&2
   exit 1
