@@ -108,6 +108,25 @@ jobs:
         with:
           path: artifacts
 
+      - name: Create deployment bundle
+        run: |
+          mkdir -p pkg
+          # include README, installer script, theme
+          cp README.md setup-zsh.sh mojibake.omp.json pkg/
+          # gather binaries and rename
+          for f in artifacts/*-zsh/out/*/bin/zsh; do
+            # e.g. artifacts/linux-x86_64-zsh/out/linux-x86_64/bin/zsh
+            base=$(echo "$f" | awk -F'/' '{print $1}')
+            case "$base" in
+              linux-x86_64-zsh) cp "$f" pkg/zsh.linux.amd64 ;;
+              linux-arm64-zsh) cp "$f" pkg/zsh.linux.arm64 ;;
+              macos-x86_64-zsh) cp "$f" pkg/zsh.osx.amd64 ;;
+              macos-arm64-zsh) cp "$f" pkg/zsh.osx.arm64 ;;
+            esac
+          done
+          cd pkg
+          zip -r ../mojibake-zsh-bundle.zip .
+
       - name: Create or update GitHub Release
         uses: ncipollo/release-action@v1
         with:
